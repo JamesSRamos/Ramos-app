@@ -1,85 +1,154 @@
 <?php
 
-
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
-use App\Services\UserService;
-use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Response;
 
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProductController;
 
-Route::get('/', function () {
-    return view('welcome');
-    #return "Hello World";
+use App\Services\UserService;
+use App\Services\ProductService;
+
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+
+// Home Route
+Route::get('/', function (Request $request) {
+
+    // get name from query string (?name=David)
+    $name = $request->input('name', 'Greed Island');
+
+    return view('welcome', compact('name'));
+
 });
 
 
+// Show users using controller
 Route::get('/show-users', [UserController::class, 'show']);
 
 
-//Service Container
+// Service Container example
 Route::get('/test-container', function (Request $request) {
+
     $input = $request->input('key');
+
     return $input;
+
 });
 
 
-//Service Provider
+// Service Provider example
 Route::get('/test-provider', function (UserService $userService) {
+
     return $userService->listUsers();
+
 });
 
 
+// Controller route
 Route::get('/test-users', [UserController::class, 'index']);
 
 
-//Facades
+// Facade example
 Route::get('/test-facade', function (UserService $userService) {
+
     return Response::json($userService->listUsers());
+
 });
 
-//Exercise #3
 
-Route::get('/post/{post}/comment/{comment}', function (string $postId, string $comment){
-    return "Post ID: " . $postId . " - Comment: " . $comment;
+// Route parameters
+Route::get('/post/{post}/comment/{comment}', function ($post, $comment) {
+
+    return "Post ID: " . $post . " - Comment: " . $comment;
+
 });
 
-Route::get('/post/{id}', function (string $id) {
+
+// Route with number only constraint
+Route::get('/post/{id}', function ($id) {
+
     return $id;
-})-> where('id',"[0-9]+");
 
-Route::get('/search/{search}', function (string $search){
+})->where('id', '[0-9]+');
+
+
+// Route accept any search string
+Route::get('/search/{search}', function ($search) {
+
     return $search;
+
 })->where('search', '.*');
 
-// Named Route
-Route::get('/test/route/sample',function(){
+
+// Named route
+Route::get('/test/route/sample', function () {
+
     return route('test-route');
+
 })->name('test-route');
 
-//Router-> Middleware Group
-Route::middleware(['user-middleware'])->group(function(){
-    Route::get('route-middleware-group/first',function (Request $request){
-        echo 'first';
+
+// Middleware group
+Route::middleware(['user-middleware'])->group(function () {
+
+    Route::get('route-middleware-group/first', function () {
+
+        return 'first';
+
     });
 
-    Route::get('route-middleware-group/second',function (Request $request){
-        echo 'second';
+    Route::get('route-middleware-group/second', function () {
+
+        return 'second';
+
     });
+
 });
 
-//Route-> Controller
-route::controller(UserController::class)->group(function () {
-    route::get('/users', 'index');
-    route::get('/users/first', 'first');
-    route::get('/users/{id}', 'get');
+
+// Controller group
+Route::controller(UserController::class)->group(function () {
+
+    Route::get('/users', 'index');
+
+    Route::get('/users/first', 'first');
+
+    Route::get('/users/{id}', 'get');
+
 });
 
-//CSRF
-route::get('/token', function (request $request) {
+
+// CSRF form
+Route::get('/token', function () {
+
     return view('token');
+
 });
 
-route::post('/token', function (Request $request) { 
-    return $request->all(); 
+
+Route::post('/token', function (Request $request) {
+
+    return $request->all();
+
+});
+
+
+// Resource Controller
+Route::resource('products', ProductController::class);
+
+
+// View with data from service
+Route::get('/product-list', function (ProductService $productService) {
+
+    $products = $productService->listProducts();
+
+    return view('product-list', compact('products'));
+
 });
