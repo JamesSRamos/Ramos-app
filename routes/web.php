@@ -1,154 +1,132 @@
 <?php
 
+use App\Http\Controllers\ProductController;
+use GuzzleHttp\Middleware;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
+use App\Services\UserService;
+use App\Http\Controllers\UserController;
+use App\Services\ProductService;
 use Illuminate\Support\Facades\Response;
 
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\ProductController;
 
-use App\Services\UserService;
-use App\Services\ProductService;
-
-
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-*/
-
-
-// Home Route
+// basic route
 Route::get('/', function (Request $request) {
-
-    // get name from query string (?name=David)
-    $name = $request->input('name', 'Greed Island');
-
+    // greet the user with a name passed via query string (e.g. /?name=Alice)
+    $name = $request->input('name', 'Guest');
     return view('welcome', compact('name'));
-
 });
 
 
-// Show users using controller
+// alternative root (kept from your code)
+Route::get('/home', function () {
+    return view('welcome', ['name' => 'Jco-app']);
+    #return "Hello World";
+});
+
+
 Route::get('/show-users', [UserController::class, 'show']);
 
 
-// Service Container example
+//Service Container
 Route::get('/test-container', function (Request $request) {
-
     $input = $request->input('key');
-
     return $input;
-
 });
 
 
-// Service Provider example
+//Service Provider
 Route::get('/test-provider', function (UserService $userService) {
-
     return $userService->listUsers();
-
 });
 
 
-// Controller route
 Route::get('/test-users', [UserController::class, 'index']);
 
 
-// Facade example
+//Facades
 Route::get('/test-facade', function (UserService $userService) {
-
     return Response::json($userService->listUsers());
-
 });
 
 
-// Route parameters
-Route::get('/post/{post}/comment/{comment}', function ($post, $comment) {
+//exercise 3
 
-    return "Post ID: " . $post . " - Comment: " . $comment;
-
+//routing -> parameters
+Route::get('/post/{post}/comment/{comment}', function (string $postId, string $comment) {
+    return "Post ID: " . $postId . " - Comment: " . $comment;
 });
 
 
-// Route with number only constraint
-Route::get('/post/{id}', function ($id) {
-
+// Exercise #3
+Route::get('/post/{id}', function (string $id) {
     return $id;
-
 })->where('id', '[0-9]+');
 
 
-// Route accept any search string
-Route::get('/search/{search}', function ($search) {
-
+Route::get('/search/{search}', function (string $search) {
     return $search;
-
 })->where('search', '.*');
 
 
-// Named route
+//named route or route alias
 Route::get('/test/route/sample', function () {
-
     return route('test-route');
-
 })->name('test-route');
 
 
-// Middleware group
+//route -> middleware group
 Route::middleware(['user-middleware'])->group(function () {
 
-    Route::get('route-middleware-group/first', function () {
-
-        return 'first';
-
+    Route::get('route-middleware-group/first', function (Request $request) {
+        echo 'first';
     });
 
-    Route::get('route-middleware-group/second', function () {
-
-        return 'second';
-
+    Route::get('route-middleware-group/second', function (Request $request) {
+        echo 'second';
     });
 
 });
 
 
-// Controller group
+//route -> Controller Group
 Route::controller(UserController::class)->group(function () {
-
     Route::get('/users', 'index');
-
     Route::get('/users/first', 'first');
-
     Route::get('/users/{id}', 'get');
-
 });
 
 
-// CSRF form
-Route::get('/token', function () {
-
+//csrf
+Route::get('/token', function (Request $request) {
     return view('token');
-
 });
-
 
 Route::post('/token', function (Request $request) {
-
     return $request->all();
-
 });
 
 
-// Resource Controller
+//middleware
+Route::get('/users', [UserController::class, 'index'])->middleware('user-middleware');
+
+// Controller
+// Middleware
+Route::get('/users', [UserController::class, 'index']);
+
+
+//resourse
 Route::resource('products', ProductController::class);
 
 
-// View with data from service
+//view with data
 Route::get('/product-list', function (ProductService $productService) {
+    $data['products'] = $productService->listProducts();
+    return view('product-list', $data);
+});
 
-    $products = $productService->listProducts();
-
-    return view('product-list', compact('products'));
-
+//View with data
+Route::get('/product-list-alt', function (ProductService $productService) {
+    $data['products'] = $productService->listProducts();
+    return view('products.list', $data);
 });
